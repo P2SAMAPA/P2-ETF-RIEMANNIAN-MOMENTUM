@@ -25,17 +25,17 @@ UNIVERSES = {
     "COMBINED": ALL_TICKERS
 }
 
-# --- Manifold Parameters (Increased Complexity) ---
-COVARIANCE_WINDOW = 126               # 6 months (was 63)
-FRECHET_WINDOW = 63                   # 3 months baseline (was 21)
-FRECHET_MAX_ITER = 100                # More iterations for convergence
-FRECHET_TOL = 1e-8                    # Tighter tolerance
-MIN_OBSERVATIONS = 504                # Minimum data required
+# --- Manifold Parameters (Reduced for GitHub Actions) ---
+COVARIANCE_WINDOW = 63                # 3 months (reduced from 126)
+FRECHET_WINDOW = 21                   # 1 month baseline (reduced from 63)
+FRECHET_MAX_ITER = 30                 # Fewer iterations (was 100)
+FRECHET_TOL = 1e-6                    # Relaxed tolerance (was 1e-8)
+MIN_OBSERVATIONS = 252                # Minimum data required
 RANDOM_SEED = 42
 
-# --- Momentum Parameters ---
-MOMENTUM_LOOKBACKS = [5, 10, 21]      # Multiple horizons to average
-N_BOOTSTRAP = 50                      # Bootstrap samples for confidence intervals
+# --- Momentum Parameters (Reduced) ---
+MOMENTUM_LOOKBACKS = [5, 21]          # Only two horizons (was [5,10,21])
+N_BOOTSTRAP = 10                      # Minimal bootstrap (was 50)
 
 # --- Shrinking Windows ---
 SHRINKING_WINDOW_START_YEARS = list(range(2010, 2025))
