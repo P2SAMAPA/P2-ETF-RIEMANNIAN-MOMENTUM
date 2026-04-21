@@ -4,6 +4,7 @@ Computes Fréchet mean and manifold momentum using the AIRM metric.
 """
 
 import numpy as np
+import pandas as pd
 from scipy.linalg import logm, expm, fractional_matrix_power
 
 def spd_logm(X):
