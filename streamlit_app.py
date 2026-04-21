@@ -55,7 +55,8 @@ st.sidebar.divider()
 st.sidebar.markdown("### 🌀 Manifold Parameters")
 st.sidebar.markdown(f"- Cov Window: **{config.COVARIANCE_WINDOW}** days")
 st.sidebar.markdown(f"- Fréchet Window: **{config.FRECHET_WINDOW}** days")
-st.sidebar.markdown(f"- Momentum Lookback: **{config.MOMENTUM_LOOKBACK}** days")
+st.sidebar.markdown(f"- Momentum Lookbacks: **{config.MOMENTUM_LOOKBACKS}**")
+st.sidebar.markdown(f"- Bootstrap Samples: **{config.N_BOOTSTRAP}**")
 
 st.markdown('<div class="main-header">🌀 P2Quant Riemannian Momentum</div>', unsafe_allow_html=True)
 st.markdown('<div>Manifold Learning on SPD Covariance Matrices – Nonlinear Market Momentum</div>', unsafe_allow_html=True)
@@ -73,19 +74,28 @@ for tab, key in zip(tabs, universe_keys):
         top = daily['top_picks'].get(key, [])
         universe_data = daily['universes'].get(key, {})
         scores = universe_data.get('scores', {})
+        cis = universe_data.get('confidence_intervals', {})
 
         if top:
             pick = top[0]
+            ci = cis.get(pick['ticker'], {'lower': pick['score'], 'upper': pick['score']})
             st.markdown(f"""
             <div class="hero-card">
                 <h2>🌀 Top Manifold Momentum: {pick['ticker']}</h2>
                 <p>Score: {score_badge(pick['score'])}</p>
+                <p>95% CI: [{ci.get('lower', pick['score']):.4f}, {ci.get('upper', pick['score']):.4f}]</p>
             </div>
             """, unsafe_allow_html=True)
 
         st.markdown("### All ETFs (Manifold Momentum Score)")
         rows = []
         for t, s in scores.items():
-            rows.append({'Ticker': t, 'Score': f"{s:.4f}"})
+            ci = cis.get(t, {})
+            rows.append({
+                'Ticker': t,
+                'Score': f"{s:.4f}",
+                'CI Lower': f"{ci.get('lower', s):.4f}",
+                'CI Upper': f"{ci.get('upper', s):.4f}"
+            })
         df = pd.DataFrame(rows).sort_values('Score', ascending=False)
         st.dataframe(df, use_container_width=True, hide_index=True)
