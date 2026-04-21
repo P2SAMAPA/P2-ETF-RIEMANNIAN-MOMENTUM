@@ -35,7 +35,7 @@ RANDOM_SEED = 42
 
 # --- Momentum Parameters (Reduced) ---
 MOMENTUM_LOOKBACKS = [5, 21]          # Only two horizons (was [5,10,21])
-N_BOOTSTRAP = 40                      # Minimal bootstrap (was 50)
+N_BOOTSTRAP = 30                      # Minimal bootstrap (was 50)
 
 # --- Shrinking Windows ---
 SHRINKING_WINDOW_START_YEARS = list(range(2010, 2025))
