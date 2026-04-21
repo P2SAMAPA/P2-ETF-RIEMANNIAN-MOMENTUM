@@ -18,7 +18,10 @@ def run_riemannian():
     model = RiemannianMomentum(
         cov_window=config.COVARIANCE_WINDOW,
         frechet_window=config.FRECHET_WINDOW,
-        momentum_lookback=config.MOMENTUM_LOOKBACK
+        momentum_lookbacks=config.MOMENTUM_LOOKBACKS,
+        n_bootstrap=config.N_BOOTSTRAP,
+        frechet_max_iter=config.FRECHET_MAX_ITER,
+        frechet_tol=config.FRECHET_TOL
     )
 
     all_results = {}
@@ -30,24 +33,32 @@ def run_riemannian():
         if len(returns) < config.MIN_OBSERVATIONS:
             continue
 
-        # Use recent data for manifold analysis
-        recent_returns = returns.iloc[-min(len(returns), 504):]  # up to 2 years
+        # Use recent data for manifold analysis (up to 4 years)
+        recent_returns = returns.iloc[-min(len(returns), 1008):]
         result = model.compute_manifold_momentum(recent_returns)
         scores = result['scores']
+        confidence_intervals = result.get('confidence_intervals', {})
 
         if not scores:
             continue
 
         all_results[universe_name] = {
             'tangent_vector': result['tangent_vector'],
-            'scores': scores
+            'scores': scores,
+            'confidence_intervals': confidence_intervals
         }
 
         sorted_tickers = sorted(scores.items(), key=lambda x: x[1], reverse=True)
         top_picks[universe_name] = [
-            {'ticker': t, 'score': s} for t, s in sorted_tickers[:3]
+            {
+                'ticker': t,
+                'score': s,
+                'ci_lower': confidence_intervals.get(t, {}).get('lower', s),
+                'ci_upper': confidence_intervals.get(t, {}).get('upper', s)
+            }
+            for t, s in sorted_tickers[:3]
         ]
-        print(f"  Top 3: {top_picks[universe_name]}")
+        print(f"  Top 3: {[p['ticker'] for p in top_picks[universe_name]]}")
 
     # Shrinking windows (simplified)
     shrinking_results = {}
@@ -64,12 +75,15 @@ def run_riemannian():
             returns_win = data_manager.prepare_returns_matrix(df_window, tickers)
             if len(returns_win) < config.MIN_OBSERVATIONS:
                 continue
-            recent_win = returns_win.iloc[-504:]
+            recent_win = returns_win.iloc[-min(len(returns_win), 1008):]
             result_win = model.compute_manifold_momentum(recent_win)
             scores_win = result_win['scores']
             if scores_win:
                 best = max(scores_win, key=scores_win.get)
-                window_top[universe_name] = {'ticker': best, 'score': scores_win[best]}
+                window_top[universe_name] = {
+                    'ticker': best,
+                    'score': scores_win[best]
+                }
         shrinking_results[window_label] = {
             'start_year': start_year,
             'top_picks': window_top
@@ -80,7 +94,8 @@ def run_riemannian():
         "config": {
             "covariance_window": config.COVARIANCE_WINDOW,
             "frechet_window": config.FRECHET_WINDOW,
-            "momentum_lookback": config.MOMENTUM_LOOKBACK
+            "momentum_lookbacks": config.MOMENTUM_LOOKBACKS,
+            "n_bootstrap": config.N_BOOTSTRAP
         },
         "daily_trading": {
             "universes": all_results,
