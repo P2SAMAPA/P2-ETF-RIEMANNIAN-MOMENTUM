@@ -25,14 +25,17 @@ UNIVERSES = {
     "COMBINED": ALL_TICKERS
 }
 
-# --- Manifold Parameters ---
-COVARIANCE_WINDOW = 63                # Days for rolling covariance estimation (approx 3 months)
-FRECHET_WINDOW = 21                   # Days for Fréchet mean baseline (1 month)
-MIN_OBSERVATIONS = 252                # Minimum total data required
+# --- Manifold Parameters (Increased Complexity) ---
+COVARIANCE_WINDOW = 126               # 6 months (was 63)
+FRECHET_WINDOW = 63                   # 3 months baseline (was 21)
+FRECHET_MAX_ITER = 100                # More iterations for convergence
+FRECHET_TOL = 1e-8                    # Tighter tolerance
+MIN_OBSERVATIONS = 504                # Minimum data required
 RANDOM_SEED = 42
 
-# --- Signal Parameters ---
-MOMENTUM_LOOKBACK = 5                 # Days to compute manifold momentum direction
+# --- Momentum Parameters ---
+MOMENTUM_LOOKBACKS = [5, 10, 21]      # Multiple horizons to average
+N_BOOTSTRAP = 50                      # Bootstrap samples for confidence intervals
 
 # --- Shrinking Windows ---
 SHRINKING_WINDOW_START_YEARS = list(range(2010, 2025))
