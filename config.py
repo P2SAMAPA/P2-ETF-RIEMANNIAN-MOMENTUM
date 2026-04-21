@@ -26,16 +26,16 @@ UNIVERSES = {
 }
 
 # --- Manifold Parameters (Reduced for GitHub Actions) ---
-COVARIANCE_WINDOW = 63                # 3 months (reduced from 126)
+COVARIANCE_WINDOW = 126                # 3 months (reduced from 126)
 FRECHET_WINDOW = 21                   # 1 month baseline (reduced from 63)
-FRECHET_MAX_ITER = 30                 # Fewer iterations (was 100)
+FRECHET_MAX_ITER = 42                 # Fewer iterations (was 100)
 FRECHET_TOL = 1e-6                    # Relaxed tolerance (was 1e-8)
 MIN_OBSERVATIONS = 252                # Minimum data required
 RANDOM_SEED = 42
 
 # --- Momentum Parameters (Reduced) ---
 MOMENTUM_LOOKBACKS = [5, 21]          # Only two horizons (was [5,10,21])
-N_BOOTSTRAP = 10                      # Minimal bootstrap (was 50)
+N_BOOTSTRAP = 40                      # Minimal bootstrap (was 50)
 
 # --- Shrinking Windows ---
 SHRINKING_WINDOW_START_YEARS = list(range(2010, 2025))
