@@ -25,17 +25,27 @@ UNIVERSES = {
     "COMBINED": ALL_TICKERS
 }
 
-# --- Manifold Parameters (Reduced for GitHub Actions) ---
-COVARIANCE_WINDOW = 126                # 3 months (reduced from 126)
-FRECHET_WINDOW = 21                   # 1 month baseline (reduced from 63)
-FRECHET_MAX_ITER = 42                 # Fewer iterations (was 100)
-FRECHET_TOL = 1e-6                    # Relaxed tolerance (was 1e-8)
-MIN_OBSERVATIONS = 252                # Minimum data required
+# --- Macro Columns ---
+MACRO_COLS = ["VIX", "DXY", "T10Y2Y", "TBILL_3M"]   # available from 2008
+
+# --- Manifold Parameters ---
+COVARIANCE_WINDOW = 126
+FRECHET_WINDOW = 21
+FRECHET_MAX_ITER = 42
+FRECHET_TOL = 1e-6
+MIN_OBSERVATIONS = 252
 RANDOM_SEED = 42
 
-# --- Momentum Parameters (Reduced) ---
-MOMENTUM_LOOKBACKS = [5, 21]          # Only two horizons (was [5,10,21])
-N_BOOTSTRAP = 30                      # Minimal bootstrap (was 50)
+# --- Momentum Parameters ---
+MOMENTUM_LOOKBACKS = [5, 21]
+N_BOOTSTRAP = 30
+
+# --- Signal Parameters ---
+RETURN_LOOKBACK = 21              # days for momentum return (used for predictive score)
+
+# --- Training Modes ---
+DAILY_LOOKBACK = 504              # days for daily training
+GLOBAL_TRAIN_START = "2008-01-01"
 
 # --- Shrinking Windows ---
 SHRINKING_WINDOW_START_YEARS = list(range(2010, 2025))
