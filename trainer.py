@@ -67,11 +67,13 @@ def run_mode(returns, tickers, model, mode_name, data_slice):
 
 
 def run_shrinking_windows(df_master, tickers, model):
-    """Fixed shrinking windows – use actual window data, NOT the same recent slice."""
+    """Fixed shrinking windows – each window ends at start_year+2 (or 2024)."""
     results = []
     for start_year in config.SHRINKING_WINDOW_START_YEARS:
         start_date = pd.Timestamp(f"{start_year}-01-01")
-        end_date = pd.Timestamp("2024-12-31")
+        end_year = min(start_year + 2, 2024)               # distinct end date
+        end_date = pd.Timestamp(f"{end_year}-12-31")
+
         mask = (df_master['Date'] >= start_date) & (df_master['Date'] <= end_date)
         window_df = df_master[mask]
         returns_win = data_manager.prepare_returns_matrix(window_df, tickers)
@@ -85,9 +87,10 @@ def run_shrinking_windows(df_master, tickers, model):
 
         combined_scores = compute_combined_scores(manifold_scores, returns_win, tickers, config.RETURN_LOOKBACK)
         best_ticker = max(combined_scores, key=combined_scores.get)
+
         results.append({
             'window_start': start_year,
-            'window_end': 2024,
+            'window_end': end_year,
             'ticker': best_ticker,
             'combined_score': combined_scores[best_ticker],
             'manifold_score': manifold_scores.get(best_ticker, 0.0)
