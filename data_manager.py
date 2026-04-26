@@ -35,3 +35,10 @@ def prepare_returns_matrix(df_wide: pd.DataFrame, tickers: list) -> pd.DataFrame
     )
     df_long = df_long.dropna(subset=['log_return'])
     return df_long.pivot(index='Date', columns='ticker', values='log_return')[available_tickers].dropna()
+
+def prepare_macro_features(df_wide: pd.DataFrame) -> pd.DataFrame:
+    """Extract macro columns and return as DataFrame with Date index."""
+    macro_cols = [c for c in config.MACRO_COLS if c in df_wide.columns]
+    macro_df = df_wide[['Date'] + macro_cols].copy()
+    macro_df = macro_df.set_index('Date').ffill().dropna()
+    return macro_df
