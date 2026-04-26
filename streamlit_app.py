@@ -40,9 +40,87 @@ def load_latest_results():
         return None
 
 def score_badge(s):
+    try:
+        s = float(s)
+    except:
+        return f'{s}'
     if s >= 0:
         return f'<span class="score-positive">+{s:.4f}</span>'
     return f'<span class="score-negative">{s:.4f}</span>'
+
+def render_mode_tab(mode_data, mode_name):
+    if not mode_data:
+        st.warning(f"No {mode_name} data available.")
+        return
+    top_picks = mode_data.get('top_picks', [])
+    if not top_picks:
+        st.info(f"No predictions for {mode_name}.")
+        return
+    pick = top_picks[0]
+    ticker = pick['ticker']
+    combined = pick.get('combined_score', 0.0)
+    manifold = pick.get('manifold_score', 0.0)
+    ci_lower = pick.get('ci_lower', manifold)
+    ci_upper = pick.get('ci_upper', manifold)
+
+    st.markdown(f"""
+    <div class="hero-card">
+        <h2>🌀 {mode_name} Top Pick</h2>
+        <h1>{ticker}</h1>
+        <p>Combined Score: {score_badge(combined)}</p>
+        <p>Manifold Score: {manifold:.4f} (95% CI: {ci_lower:.4f} – {ci_upper:.4f})</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+    st.markdown("### Top 3 Picks")
+    rows = []
+    for p in top_picks:
+        rows.append({
+            'Ticker': p['ticker'],
+            'Combined Score': f"{p.get('combined_score',0):.4f}",
+            'Manifold Score': f"{p.get('manifold_score',0):.4f}",
+            'CI Lower': f"{p.get('ci_lower',0):.4f}",
+            'CI Upper': f"{p.get('ci_upper',0):.4f}"
+        })
+    st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
+
+    # All ETFs table (from all_combined_scores)
+    all_combined = mode_data.get('all_combined_scores', {})
+    all_manifold = mode_data.get('all_manifold_scores', {})
+    if all_combined:
+        all_rows = []
+        for t, cs in all_combined.items():
+            ms = all_manifold.get(t, 0.0)
+            all_rows.append({
+                'Ticker': t,
+                'Combined Score': f"{cs:.4f}",
+                'Manifold Score': f"{ms:.4f}"
+            })
+        df_all = pd.DataFrame(all_rows).sort_values('Combined Score', ascending=False)
+        st.markdown("### All ETFs")
+        st.dataframe(df_all, use_container_width=True, hide_index=True)
+
+def render_shrinking_tab(shrinking_data):
+    if not shrinking_data:
+        st.warning("No shrinking data.")
+        return
+    st.markdown(f"""
+    <div class="hero-card">
+        <h2>🔄 Shrinking Consensus</h2>
+        <h1>{shrinking_data['ticker']}</h1>
+        <p>{shrinking_data['conviction']:.0f}% conviction · {shrinking_data['num_windows']} windows</p>
+    </div>
+    """, unsafe_allow_html=True)
+    with st.expander("📋 All Windows"):
+        rows = []
+        for w in shrinking_data.get('windows', []):
+            rows.append({
+                'Window': f"{w['window_start']}-{w['window_end']}",
+                'ETF': w['ticker'],
+                'Combined Score': f"{w.get('combined_score',0):.4f}",
+                'Manifold Score': f"{w.get('manifold_score',0):.4f}"
+            })
+        st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
 
 # --- Sidebar ---
 st.sidebar.markdown("## ⚙️ Configuration")
@@ -65,37 +143,21 @@ if data is None:
     st.warning("No data available.")
     st.stop()
 
-daily = data['daily_trading']
+universes_data = data.get('universes', {})
 tabs = st.tabs(["📊 Combined", "📈 Equity Sectors", "💰 FI/Commodities"])
-universe_keys = ["COMBINED", "EQUITY_SECTORS", "FI_COMMODITIES"]
+keys = ["COMBINED", "EQUITY_SECTORS", "FI_COMMODITIES"]
 
-for tab, key in zip(tabs, universe_keys):
+for tab, key in zip(tabs, keys):
+    uni = universes_data.get(key, {})
+    if not uni:
+        with tab:
+            st.info(f"No data for {key}.")
+        continue
     with tab:
-        top = daily['top_picks'].get(key, [])
-        universe_data = daily['universes'].get(key, {})
-        scores = universe_data.get('scores', {})
-        cis = universe_data.get('confidence_intervals', {})
-
-        if top:
-            pick = top[0]
-            ci = cis.get(pick['ticker'], {'lower': pick['score'], 'upper': pick['score']})
-            st.markdown(f"""
-            <div class="hero-card">
-                <h2>🌀 Top Manifold Momentum: {pick['ticker']}</h2>
-                <p>Score: {score_badge(pick['score'])}</p>
-                <p>95% CI: [{ci.get('lower', pick['score']):.4f}, {ci.get('upper', pick['score']):.4f}]</p>
-            </div>
-            """, unsafe_allow_html=True)
-
-        st.markdown("### All ETFs (Manifold Momentum Score)")
-        rows = []
-        for t, s in scores.items():
-            ci = cis.get(t, {})
-            rows.append({
-                'Ticker': t,
-                'Score': f"{s:.4f}",
-                'CI Lower': f"{ci.get('lower', s):.4f}",
-                'CI Upper': f"{ci.get('upper', s):.4f}"
-            })
-        df = pd.DataFrame(rows).sort_values('Score', ascending=False)
-        st.dataframe(df, use_container_width=True, hide_index=True)
+        d, g, s = st.tabs(["📅 Daily (504d)", "🌍 Global (2008‑YTD)", "🔄 Shrinking Consensus"])
+        with d:
+            render_mode_tab(uni.get('daily'), "Daily")
+        with g:
+            render_mode_tab(uni.get('global'), "Global")
+        with s:
+            render_shrinking_tab(uni.get('shrinking'))
